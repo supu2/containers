@@ -21,22 +21,17 @@ if [ -z "$ELASTICSEARCH_USER" ] || [ -z "$ELASTICSEARCH_PASSWORD" ]; then
     exit 1
 fi
 
-# Create a temporary file for target list
-TEMP_TARGET_FILE=$(mktemp)
-
-# Convert comma-separated CIDR ranges to line-separated format
-echo "$TARGET_RANGE" | tr ',' '\n' > "$TEMP_TARGET_FILE"
-
 echo "Starting scan of ranges: $TARGET_RANGE"
 
 # Run naabu scan with list file and capture output
-scan_output=$(naabu -l "$TEMP_TARGET_FILE" -json -rate 100 -silent | jq -c '. +{hostname: "'$HOSTNAME'"}' | awk '{print "{\"index\":{}}\n"$1}')
+naabu -host "$TARGET_RANGE" -json -rate 100 -silent $NAABU_EXTRA_ARGS | jq -c '. +{hostname: "'$HOSTNAME'", "@timestamp": .timestamp} | del(.timestamp) ' | awk '{print "{\"index\":{}}\n"$1}' > result.json
 
 # Send to Elasticsearch using bulk API
 response=$(curl -X POST "$ELASTICSEARCH_HOST/$ELASTICSEARCH_INDEX/_bulk" \
         -H "Content-Type: application/x-ndjson" \
         -u "$ELASTICSEARCH_USER:$ELASTICSEARCH_PASSWORD" \
-        --data-binary "$scan_output" \
+        --data-binary "@result.json" \
+        --compressed \
         -w "\n%{http_code}")
 
 http_code=$(echo "$response" | tail -n1)
