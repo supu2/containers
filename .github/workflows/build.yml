@@ -1,0 +1,76 @@
+name: Build and Push Containers
+
+on:
+  push:
+    paths:
+      - 'naabu/**'
+      - 'squid/**'
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      container:
+        description: 'Container to build (naabu/squid)'
+        required: true
+      version:
+        description: 'Version to tag (e.g., 1.0.0)'
+        required: true
+
+jobs:
+  determine-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - id: set-matrix
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            # Manual trigger - build specified container
+            echo "matrix={\"container\":[\"${{ github.event.inputs.container }}\"]}" >> $GITHUB_OUTPUT
+          else
+            # Push trigger - detect changed containers
+            CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E "^(naabu|squid)/" | cut -d/ -f1 | sort -u | jq -R -s -c 'split("\n")[:-1]')
+            echo "matrix={\"container\":$CHANGED}" >> $GITHUB_OUTPUT
+          fi
+
+  build-and-push:
+    needs: determine-changes
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        container: ${{ fromJson(needs.determine-changes.outputs.matrix).container }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get version from file
+        id: get-version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            VERSION=$(cat ${{ matrix.container }}/VERSION)
+            echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./${{ matrix.container }}
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/${{ matrix.container }}:latest
+            ghcr.io/${{ github.repository }}/${{ matrix.container }}:${{ steps.get-version.outputs.version }}
