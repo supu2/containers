@@ -24,7 +24,7 @@ fi
 echo "Starting scan of ranges: $TARGET_RANGE"
 
 # Run naabu scan with list file and capture output
-naabu -host "$TARGET_RANGE" -duc -json -silent $NAABU_EXTRA_ARGS | jq -c '. +{hostname: "'$HOSTNAME'", "@timestamp": .timestamp} | del(.timestamp) ' | awk '{print "{\"index\":{}}\n"$1}' > result.json
+naabu -host "$TARGET_RANGE" -duc -json -silent $NAABU_EXTRA_ARGS | jq -c '. +{hostname: "'$HOSTNAME'", "@timestamp": .timestamp} | del(.timestamp) ' | awk '{print "{\"index\":{}}\n"$1}' | tee result.json | grep -v "index"
 
 # Send to Elasticsearch using bulk API
 response=$(curl -X POST "$ELASTICSEARCH_HOST/$ELASTICSEARCH_INDEX/_bulk" \
@@ -32,7 +32,7 @@ response=$(curl -X POST "$ELASTICSEARCH_HOST/$ELASTICSEARCH_INDEX/_bulk" \
         -u "$ELASTICSEARCH_USER:$ELASTICSEARCH_PASSWORD" \
         --data-binary "@result.json" \
         --compressed \
-        -w "\n%{http_code}")
+        -s -w "\n%{http_code}")
 
 http_code=$(echo "$response" | tail -n1)
 if [ "$http_code" = "200" ]; then
