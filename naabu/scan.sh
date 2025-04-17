@@ -24,8 +24,8 @@ fi
 echo "Starting scan of ranges: $TARGET_RANGE"
 
 # Run naabu scan with list file and capture output
-naabu -host "$TARGET_RANGE" -duc -json -silent $NAABU_EXTRA_ARGS | jq -c '. +{hostname: "'$HOSTNAME'", "@timestamp": .timestamp} | del(.timestamp) ' | awk '{print "{\"index\":{}}\n"$1}' | tee result.json | grep -v "index"
-
+naabu -host "$TARGET_RANGE" -duc -silent -wn -pe -sn | jq -cR --arg timestamp "$(date -u +"%Y-%m-%dT%H:%M:%S.000000000Z")" '{ "destination": {"ip": . }, "protocol": "icmp", "hostname": "'$HOSTNAME'", "@timestamp": $timestamp}' | awk '{print "{\"index\":{}}\n"$1}' | tee result.json | grep -v "index"
+naabu -host "$TARGET_RANGE" -duc -json -silent $NAABU_EXTRA_ARGS | jq -c '. +{hostname: "'$HOSTNAME'", "@timestamp": .timestamp} | del(.timestamp) ' | awk '{print "{\"index\":{}}\n"$1}' | tee -a result.json | grep -v "index"
 # Send to Elasticsearch using bulk API
 response=$(curl -X POST "$ELASTICSEARCH_HOST/$ELASTICSEARCH_INDEX/_bulk" \
         -H "Content-Type: application/x-ndjson" \
