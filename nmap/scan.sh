@@ -47,14 +47,14 @@ for TARGET in $TARGET_RANGE;
 do
     echo "Starting TCP scan of range: $TARGET"
     # Run naabu scan with list file and capture output
-    nmap -sS $TARGET "${ARGS_ARRAY[@]}" -oX - | nmap-formatter json | jq -c '.Host[]' 2>/dev/null | awk '{print "{\"index\":{}}\n"$1}' | tee result.json | grep -v "index"
+    nmap -sS $TARGET "${ARGS_ARRAY[@]}" -oX - | nmap-formatter json | jq -c '.Host[] +{hostname: "'$HOSTNAME'"}' 2>/dev/null | awk '{print "{\"index\":{}}\n"$1}' | tee result.json | grep -v "index"
     upload
 done
 for TARGET in $TARGET_RANGE;
 do
     echo "Starting UDP scan of range: $TARGET"
     # Run naabu scan with list file and capture output
-    nmap -sU $TARGET "${ARGS_ARRAY[@]}" -oX - | nmap-formatter json | jq -c '.Host[]' 2>/dev/null | awk '{print "{\"index\":{}}\n"$1}' | tee result.json | grep -v "index"
+    nmap -sU $TARGET "${ARGS_ARRAY[@]}" -oX - | nmap-formatter json | jq -c '.Host[] +{hostname: "'$HOSTNAME'"}' 2>/dev/null | awk '{print "{\"index\":{}}\n"$1}' | tee result.json | grep -v "index"
     upload
 done
 echo "Scan and data transfer completed"
