@@ -62,7 +62,7 @@ do
     nmap -sU $TARGET "${ARGS_ARRAY[@]}" -oX - | nmap-formatter json | jq -c '.Host[] +{hostname: "'$HOSTNAME'"}' 2>/dev/null | awk '{print "{\"index\":{}}\n"$1}' | tee result.json | grep -v "index"
     endTime=$(date +%s)
     echo '{"index":{}}' >> result.json
-    echo "nmap -sS $TARGET ${ARGS_ARRAY[@]}" | jq -R -c -M '. | {command: ., hostname: "'$HOSTNAME'", StartTime: "'$startTime'", EndTime: "'$endTime'"}' >> result.json
+    echo "nmap -sU $TARGET ${ARGS_ARRAY[@]}" | jq -R -c -M '. | {command: ., hostname: "'$HOSTNAME'", StartTime: "'$startTime'", EndTime: "'$endTime'"}' >> result.json
     upload
 done
 echo "Scan and data transfer completed"
