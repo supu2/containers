@@ -3,6 +3,7 @@ name: Build and Push Containers
 on:
   push:
     paths:
+      - 'geoip/**'
       - 'naabu/**'
       - 'squid/**'
       - 'nmap/**'
@@ -12,7 +13,7 @@ on:
   workflow_dispatch:
     inputs:
       container:
-        description: 'Container to build (naabu/nmap/squid/ollama)'
+        description: 'Container to build (naabu/nmap/squid/ollama/geoip)'
         required: true
       version:
         description: 'Version to tag (e.g., 1.0.0)'
@@ -35,7 +36,7 @@ jobs:
             echo "matrix={\"container\":[\"${{ github.event.inputs.container }}\"]}" >> $GITHUB_OUTPUT
           else
             # Push trigger - detect changed containers
-            CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E "^(naabu|nmap|squid|ollama)/" | cut -d/ -f1 | sort -u | jq -R -s -c 'split("\n")[:-1]')
+            CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E "^(geoip|naabu|nmap|squid|ollama)/" | cut -d/ -f1 | sort -u | jq -R -s -c 'split("\n")[:-1]')
             echo "matrix={\"container\":$CHANGED}" >> $GITHUB_OUTPUT
           fi
 
