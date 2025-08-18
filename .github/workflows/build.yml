@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'geoip/**'
+      - 'binary/**'
       - 'naabu/**'
       - 'squid/**'
       - 'nmap/**'
@@ -15,7 +16,7 @@ on:
   workflow_dispatch:
     inputs:
       container:
-        description: 'Container to build (naabu/nmap/squid/ollama/geoip/arkime/http-logger)'
+        description: 'Container to build (binary/naabu/nmap/squid/ollama/geoip/arkime/http-logger)'
         required: true
       version:
         description: 'Version to tag (e.g., 1.0.0)'
