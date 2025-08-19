@@ -7,4 +7,4 @@ RUN apk add curl && mkdir -p /binary  && cd /binary \
   && chmod +x *
 
 FROM scratch
-COPY --from=builder /binary /binary
+COPY --from=builder /binary /
