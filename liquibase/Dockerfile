@@ -4,3 +4,4 @@ USER root
 RUN chown liquibase:root /liquibase && \
     chmod g+rx /liquibase
 USER liquibase:liquibase
+RUN lpm add postgresql --global
