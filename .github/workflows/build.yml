@@ -13,13 +13,14 @@ on:
       - 'liquibase/**'
       - 'minio-client/**'
       - 'roundcube/**'
+      - 'netshoot/**'
       - 'http-logger/**'
     branches:
       - main
   workflow_dispatch:
     inputs:
       container:
-        description: 'Container to build (binary/naabu/nmap/squid/ollama/geoip/arkime/liquibase/minio-client/roundcube/http-logger)'
+        description: 'Container to build (binary/naabu/nmap/squid/ollama/geoip/arkime/liquibase/minio-client/roundcube/http-logger/netshoot)'
         required: true
       version:
         description: 'Version to tag (e.g., 1.0.0)'
@@ -50,7 +51,7 @@ jobs:
             echo "matrix={\"container\":[\"${{ github.event.inputs.container }}\"]}" >> $GITHUB_OUTPUT
           else
             # Push trigger - detect changed containers
-            CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E "^(arkime|binary|geoip|naabu|nmap|squid|ollama|liquibase|minio-client|http-logger|roundcube)/" | cut -d/ -f1 | sort -u | jq -R -s -c 'split("\n")[:-1]')
+            CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E "^(arkime|binary|geoip|naabu|nmap|squid|ollama|liquibase|minio-client|http-logger|roundcube|netshoot)/" | cut -d/ -f1 | sort -u | jq -R -s -c 'split("\n")[:-1]')
             echo "matrix={\"container\":$CHANGED}" >> $GITHUB_OUTPUT
           fi
 
